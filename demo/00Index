@@ -1,0 +1,6 @@
+Rprofile   Automatically source files in a given directory.
+CreateSmallPopulation   Selects a random subset of a population and then
+                        categorises this subset by mean arterial pressure.
+PredictHypertension   Fit a GLM to predict hypertension in a population and
+                      evaluate the fit by plotting the ROC.
+

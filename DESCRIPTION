@@ -1,0 +1,12 @@
+Package: rma.g92
+Version: 0.1
+Date: 2011-01-19
+Title: Functions for analysing data obtained from the Guyton model.
+Author: Rob Moss <email@withheld.com>
+Maintainer: Rob Moss <email@withheld.com>
+Depends: R (>= 2.10.0), ggplot2, Hmisc, ROCR, stats
+Description: This package contains a range of analysis and plotting functions
+  that have been written for the purpose of understanding the dynamics of the
+  (extended) Guyton model. The plotting functions generally return ggplot2
+  plot objects.
+License: GPL (>= 2)
