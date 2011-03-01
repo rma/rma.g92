@@ -50,7 +50,8 @@ PlotROC <- function(data, output, glm) {
 
   auc_lbl = sprintf("Area = %0.3f", auc)
   p <- qplot() +
-    geom_line(aes(x=perf@x.values[[1]], y=perf@y.values[[1]], weight=0.5, colour="all")) +
+    geom_line(aes(x=perf@x.values[[1]], y=perf@y.values[[1]], weight=1,
+                  colour="all")) +
     geom_text(aes(size = 5, x = 0.5, y = 0.5, label = auc_lbl)) +
     xlab("False positive rate") +
     ylab("True positive rate") +
@@ -65,70 +66,93 @@ PlotROC <- function(data, output, glm) {
 # Plots multiple ROCs on the one graph.
 #
 # Args:
-#   data:   The set of inputs and output from which predictions will be made.
+#   data:   The inputs and output from which predictions will be made.
 #   output: The name of the binary output to be predicted by the GLMs.
-#   ...:    Any number of binomial GLMs. Note that each GLM should have a
-#           field named "label" for identifying the AUC labels on the plot.
+#   glms:   A list of binomial GLMs. Note that each GLM may have a field
+#               named "label" for identifying the AUC labels on the plot.
+#   title:  The title of the plot legend.
+#   label:  A function for calculating ROC labels, of the form
+#           "function(glm, auc, i)" for the ith GLM.
+#   mono:   Whether to produce a monochrome or colour plot.
 #
 # Returns:
-#   Nothing; the plot is printed to the active device.
+#   The plot object.
 #
-PlotROCs <- function(data, output, ...) {
-  p <- eval(qplot()) + geom_text(size = 10)
+PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
+  # The false-positive rates for each ROC.
+  xs <- c()
+  # The true-positive rates for each ROC.
+  ys <- c()
+  # The ROC label for each point in the data frame.
+  lbls <- c()
+  # The set of unique ROC labels.
+  lbls.factors <- c()
+  # The loop counter for numbering the GLMs.
   i <- 1
 
-  list.of.perfs <- list()
-  list.of.aucs <- list()
-  list.of.lbls <- list()
-  list.of.colours <- list()
-
-  for (glm in list(...)) {
+  for (glm in glms) {
+    # Calculate the performance of the GLM on the data set.
     perf.list <- GLMPerformance(glm, data, output)
     perf <- perf.list$perf
     auc <- perf.list$auc
 
-    list.of.perfs <- c(list.of.perfs, perf)
-    list.of.aucs <- c(list.of.aucs, auc)
+    # Extract the false-positive and true-positive rates.
+    xs <- c(xs, perf@x.values[[1]])
+    ys <- c(ys, perf@y.values[[1]])
 
-    if (! is.null(glm$label)) {
-      auc_lbl = sprintf("Area (%s) = %0.3f", glm$label, auc)
+    # Determine the label for this ROC.
+    if (! is.null(legend.txt)) {
+      auc.lbl = legend.txt(glm, auc, i)
+    } else if (! is.null(glm$label)) {
+      auc.lbl = sprintf("%s (%0.3f)", glm$label, auc)
     } else {
-      auc_lbl = sprintf("Area (GLM #%d) = %0.3f", i, auc)
+      auc.lbl = sprintf("GLM #%d (%0.3f)", i, auc)
     }
-    list.of.lbls <- c(list.of.lbls, auc_lbl)
 
-    clr = as.character(i)
-    list.of.colours <- c(list.of.colours, clr)
+    # Update the data-point labels.
+    lbls <- c(lbls, rep(auc.lbl, length(perf@x.values[[1]])))
+    # Update the list of unique labels.
+    lbls.factors <- c(lbls.factors, auc.lbl)
 
-    p.geomline <- substitute(
-        geom_line(aes(x=list.of.perfs[[j]]@x.values[[1]],
-                      y=list.of.perfs[[j]]@y.values[[1]],
-                      weight=0.5, colour=list.of.colours[[j]])),
-        list(j=i))
-
-    p.roclabel <- substitute(
-        geom_text(aes(size=6, x=0.5, y=0.5-0.1*j, label=list.of.lbls[[j]],
-                      colour=list.of.colours[[j]])),
-        list(j=i))
-
-    p <- p + eval(p.geomline) + eval(p.roclabel)
-
+    # Increment the loop counter.
     i <- i + 1
   }
 
-  p <- p +
-    xlab("False positive rate") +
-    ylab("True positive rate") +
-    scale_x_continuous(limits=c(0,1)) +
-    scale_y_continuous(limits=c(0,1)) +
-    scale_colour_manual("", values=c("#CF005F", "#005FBF")) +
-    opts(legend.position = "none") +
-    opts(axis.title.x = theme_text(size = 16)) +
-    opts(axis.title.y = theme_text(size = 16, angle = 90)) +
-    opts(axis.text.x = theme_text(size = 10, vjust = 1, colour = "#8F8F8F")) +
-    opts(axis.text.y = theme_text(size = 10, hjust = 1, colour = "#8F8F8F"))
+  # Determine the legend title.
+  if (! is.null(title)) {
+    legend.title <- title
+  } else {
+    legend.title <- "GLM (Area)"
+  }
 
-  print(p)
+  # Select the appropriate colour scale.
+  if (mono) {
+    colour.scale <- scale_colour_grey(name=legend.title, start=1, end=1)
+  } else {
+    colour.scale <- scale_colour_hue(name=legend.title)
+  }
+
+  # Create the data frame for the plot.
+  roc.data <- data.frame(FPR = xs, TPR = ys, ROC = lbls)
+
+  # Plot the ROCs.
+  p <- qplot(data=roc.data) + geom_text(size = 10) +
+       geom_line(aes(x = FPR, y = TPR, weight = 0.5,
+                     colour = factor(ROC, levels=lbls.factors))) +
+       xlab("False positive rate") +
+       ylab("True positive rate") +
+       scale_x_continuous(limits=c(0,1)) +
+       scale_y_continuous(limits=c(0,1)) +
+       colour.scale +
+       opts(legend.title = theme_text(size = 12, hjust=0)) +
+       opts(axis.title.x = theme_text(size = 16)) +
+       opts(axis.title.y = theme_text(size = 16, angle = 90)) +
+       opts(axis.text.x = theme_text(size = 10, vjust = 1,
+            colour = "#8F8F8F")) +
+       opts(axis.text.y = theme_text(size = 10, hjust = 1,
+            colour = "#8F8F8F"))
+
+  return(p)
 }
 
 #
