@@ -9,14 +9,13 @@
 #   add:     The string that is added for each level of staggering.
 #   postfix: Whether the staggering should be inserted after (default) or
 #            before the label text.
+#   do.sort: Whether the labels will be ordered alphabetically when displayed.
 #
 # Returns:
 #   The list of staggered label names, in the same order as the original list.
-#   Note that StaggerLabels() assumes that the labels will be displayed
-#   alphabetically and staggers the labels accordingly.
 #
 StaggerLabels <- function(labels, levels=4, reqd="--", add="------------",
-                          postfix=TRUE) {
+                          postfix=TRUE, do.sort=TRUE) {
   #
   # Add some text to a tick label, respecting the value of "postix".
   #
@@ -35,13 +34,22 @@ StaggerLabels <- function(labels, levels=4, reqd="--", add="------------",
     }
   }
 
-  sorted.inds <- sort(labels, index.return=TRUE)
+  if (length(labels) == 0) {
+    return(list())
+  }
+
+  if (do.sort) {
+    sorted.inds <- sort(labels, index.return=TRUE)$ix
+  } else {
+    sorted.inds <- 1:length(labels)
+  }
+
   for (level in 1:levels) {
-    for (i in seq(from=level, to=length(sorted.inds$ix), by=levels)) {
-      labels[sorted.inds$ix[i]] <- strcat(labels[sorted.inds$ix[i]], reqd)
+    for (i in seq(from=level, to=length(sorted.inds), by=levels)) {
+      labels[sorted.inds[i]] <- strcat(labels[sorted.inds[i]], reqd)
       if (level > 1) {
           for (j in 2:level) {
-              labels[sorted.inds$ix[i]] <- strcat(labels[sorted.inds$ix[i]], add)
+              labels[sorted.inds[i]] <- strcat(labels[sorted.inds[i]], add)
           }
       }
     }
