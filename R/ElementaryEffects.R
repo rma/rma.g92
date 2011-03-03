@@ -5,12 +5,14 @@
 #   experiments: the data frame of delta-perturbation experiments.
 #   outliers.rm: whether to remove outliers before calculating statistics.
 #   stats.only:  whether to only return the means and deviations.
+#   log:         whether to print diagnostic output.
 #
 # Returns:
 #   A list of the elementary effects (effects), the mean effects (mean) and
 #   standard deviation of effects (sd) for each parameter in the data frame.
 #
-ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE) {
+ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
+                              log=FALSE) {
     exp.count <- dim(experiments)[1]
     names.all <- names(experiments)
     names.par <- grep("p_", names.all, value=TRUE)
@@ -29,7 +31,10 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE) {
         exps.diff <- exps.post - exps.pre
         
         delta.exps <- which(exps.diff != 0)
-        print(paste(p, ":", length(delta.exps), "experiments"), quote=FALSE)
+        if (log) {
+            log.msg <- paste(p, ":", length(delta.exps), "experiments")
+            print(log.msg, quote=FALSE)
+        }
         
         vars.pre <- experiments[ix.pre[delta.exps], names.var]
         vars.post <- experiments[ix.post[delta.exps], names.var]
@@ -66,8 +71,10 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE) {
             p.outlier.count <- sum(p.devn.magn > 2.5, na.rm=TRUE)
             p.all.count <- prod(dim(p.effects))
             p.outlier.pcnt <- round(100 * p.outlier.count / p.all.count)
-            print(paste("  Outliers: ", p.outlier.pcnt, "%", sep=""),
-                  quote=FALSE)
+            if (log) {
+                log.msg <- paste("  Outliers: ", p.outlier.pcnt, "%", sep="")
+                print(log.msg, quote=FALSE)
+            }
             p.effects[p.devn.magn > 2.5] <- NA
         }
 
