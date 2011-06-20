@@ -19,7 +19,7 @@
 #   most.corr.vars <- MostCorrelated(smallppn, "v_PA", count=-1, examine="var")
 #
 MostCorrelated <- function(data, value, method="spearman", count=10,
-                           examine=c("par","var")) {
+                           examine=c("par","var"), only.exps=c("pre", "post", "both")) {
   cols <- names(data)
   val.col <- which(cols == value)
 
@@ -33,7 +33,22 @@ MostCorrelated <- function(data, value, method="spearman", count=10,
   }
   input.cols <- input.cols[! input.cols == val.col]
 
-  cors <- cor(data[val.col], data[input.cols], method=method)
+  row.count <- dim(data)[1]
+  only.exps <- match.arg(only.exps)
+  if (only.exps == "pre") {
+    row.range <- seq(from=1, to=row.count, by=2)
+  } else if (only.exps == "post") {
+    row.range <- seq(from=2, to=row.count, by=2)
+  } else if (only.exps == "both") {
+    row.range <- 1:row.count
+  } else {
+    stop(sprintf("Invalid argument for MostCorrelated: only.exps"))
+  }
+
+  data.vals <- data[val.col, row.range]
+  data.cmps <- data[input.cols, row.range]
+
+  cors <- cor(data.vals, data.cmps, method=method)
   cor.values <- c(cors)
 
   na.values <- is.na(cor.values)
