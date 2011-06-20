@@ -43,16 +43,24 @@ GLMPerformance <- function(glm, data, output, measure="tpr", x.measure="fpr") {
 #   p <- PlotROC(rndppn$rest, "ISHYPER", ht.glm)
 #   print(p)
 #
-PlotROC <- function(data, output, glm) {
+PlotROC <- function(data, output, glm, max.points=50) {
   perf.list <- GLMPerformance(glm, data, output)
   perf <- perf.list$perf
   auc <- perf.list$auc
 
+  xs <- perf@x.values[[1]]
+  ys <- perf@y.values[[1]]
+
+  if (length(xs) > max.points) {
+      ixs <- seq(from=1, to=length(xs), length.out=max.points)
+      xs <- xs[ixs]
+      ys <- ys[ixs]
+  }
+
   auc_lbl = sprintf("Area = %0.3f", auc)
   p <- qplot() +
-    geom_line(aes(x=perf@x.values[[1]], y=perf@y.values[[1]], weight=1,
-                  colour="all")) +
-    geom_text(aes(size = 5, x = 0.5, y = 0.5, label = auc_lbl)) +
+    geom_line(aes(x=xs, y=ys, colour="all"), size=1) +
+    geom_text(size = 7.5, aes(x = 0.5, y = 0.5, label = auc_lbl)) +
     xlab("False positive rate") +
     ylab("True positive rate") +
     scale_x_continuous(limits=c(0,1)) +
@@ -78,7 +86,8 @@ PlotROC <- function(data, output, glm) {
 # Returns:
 #   The plot object.
 #
-PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
+PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE,
+  legend.txt=NULL, max.points=50) {
   # The false-positive rates for each ROC.
   xs <- c()
   # The true-positive rates for each ROC.
@@ -96,9 +105,18 @@ PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
     perf <- perf.list$perf
     auc <- perf.list$auc
 
+    xs.new <- perf@x.values[[1]]
+    ys.new <- perf@y.values[[1]]
+
+    if (length(xs.new) > max.points) {
+        ixs.new <- seq(from=1, to=length(xs.new), length.out=max.points)
+        xs.new <- xs.new[ixs.new]
+        ys.new <- ys.new[ixs.new]
+    }
+
     # Extract the false-positive and true-positive rates.
-    xs <- c(xs, perf@x.values[[1]])
-    ys <- c(ys, perf@y.values[[1]])
+    xs <- c(xs, xs.new)
+    ys <- c(ys, ys.new)
 
     # Determine the label for this ROC.
     if (! is.null(legend.txt)) {
@@ -110,7 +128,8 @@ PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
     }
 
     # Update the data-point labels.
-    lbls <- c(lbls, rep(auc.lbl, length(perf@x.values[[1]])))
+    #lbls <- c(lbls, rep(auc.lbl, length(xs.new)))
+    lbls <- c(lbls, rep(auc.lbl, length(xs.new)))
     # Update the list of unique labels.
     lbls.factors <- c(lbls.factors, auc.lbl)
 
@@ -137,7 +156,7 @@ PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
 
   # Plot the ROCs.
   p <- qplot(data=roc.data) + geom_text(size = 10) +
-       geom_line(aes(x = FPR, y = TPR, weight = 0.5,
+       geom_line(size=1, aes(x = FPR, y = TPR,
                      colour = factor(ROC, levels=lbls.factors))) +
        xlab("False positive rate") +
        ylab("True positive rate") +
@@ -146,11 +165,11 @@ PlotROCs <- function(data, output, glms, title=NULL, label=NULL, mono=FALSE) {
        colour.scale +
        opts(legend.title = theme_text(size = 12, hjust=0)) +
        opts(axis.title.x = theme_text(size = 16)) +
-       opts(axis.title.y = theme_text(size = 16, angle = 90)) +
-       opts(axis.text.x = theme_text(size = 10, vjust = 1,
-            colour = "#8F8F8F")) +
-       opts(axis.text.y = theme_text(size = 10, hjust = 1,
-            colour = "#8F8F8F"))
+       opts(axis.title.y = theme_text(size = 16, angle = 90))# +
+       #opts(axis.text.x = theme_text(size = 10, vjust = 1,
+       #     colour = "#8F8F8F")) +
+       #opts(axis.text.y = theme_text(size = 10, hjust = 1,
+       #     colour = "#8F8F8F"))
 
   return(p)
 }
