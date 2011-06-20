@@ -17,28 +17,28 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
     names.all <- names(experiments)
     names.par <- grep("p_", names.all, value=TRUE)
     names.var <- grep("v_", names.all, value=TRUE)
-    
+
     ix.pre <- seq(from=1, to=exp.count, by=2)
     ix.post <- seq(from=2, to=exp.count, by=2)
-    
+
     effects <- list()
     effect.stats <- list()
-    
+
     for (p in names.par) {
         # Find which experiments had changes in param p
         exps.pre <- experiments[[p]][ix.pre]
         exps.post <- experiments[[p]][ix.post]
         exps.diff <- exps.post - exps.pre
-        
+
         delta.exps <- which(exps.diff != 0)
         if (log) {
             log.msg <- paste(p, ":", length(delta.exps), "experiments")
             print(log.msg, quote=FALSE)
         }
-        
+
         vars.pre <- experiments[ix.pre[delta.exps], names.var]
         vars.post <- experiments[ix.post[delta.exps], names.var]
-        
+
         # Ignore any experiments where the parameter was zero prior to the
         # delta perturbation, as to avoid dividing by zero when normalising.
         vars.post[vars.pre == 0] <- NA
@@ -87,7 +87,7 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
             effects[[p]]$effects <- p.effects
         }
     }
-    
+
     return(effects)
 }
 
@@ -129,19 +129,19 @@ EffectsOnVariable <- function(effects, var.name) {
 PlotEffectsOnVariable <- function(effects, var.name, min.mean=NA, min.sd=NA,
     stagger=FALSE) {
     effects.on.v <- EffectsOnVariable(effects, var.name)
-    
+
     ys <- as.double(effects.on.v$mean)
-    
+
     # Sort from largest absolute mean to smallest absolute mean.
     ixs <- sort(abs(ys), index.return=TRUE, decreasing=FALSE)$ix
     ys <- ys[ixs]
-    
+
     short.name <- function(s) { return(substring(s, 3)) }
     xs <- as.character(map(short.name, names(effects.on.v$mean)[ixs]))
     sds <- as.double(effects.on.v$sd[ixs])
     ymins <- ys - sds
     ymaxs <- ys + sds
-    
+
     # Only plot parameters whose elementary effects exceed the minimums.
     if (! is.na(min.mean) && ! is.na(min.sd)) {
         # Elementary effects need only exceed one of the two minimums.
@@ -191,19 +191,19 @@ PlotEffectsOnVariable <- function(effects, var.name, min.mean=NA, min.sd=NA,
         y = ys[ixs],
         ymin = ymins[ixs],
         ymax = ymaxs[ixs])
-        
+
     # Label the main axis "Elementary Effect on <var.name> (mu +/- sigma)".
     axis.title <- eval(substitute(expression(
         paste("Elementary Effect on ", v, " (", mu %+-% sigma, ")")),
         list(v=substring(var.name, 3)
         )))
-        
+
     p <- qplot(data=plot.frame, geom="pointrange",
                x=factor(x, levels=x), y=y, ymin=ymin, ymax=ymax) +
          scale_x_discrete("Parameter") +
          scale_y_continuous(axis.title) +
          coord_flip()
-    
+
     return(p)
 }
 
@@ -221,14 +221,14 @@ PlotEffectsOnVariable <- function(effects, var.name, min.mean=NA, min.sd=NA,
 PlotEffectsOnAllVariables <- function(effects, min.mean=NA, min.sd=NA) {
     plots <- list()
     var.names <- names(effects[[1]]$mean)
-    
+
     for (v in var.names) {
         plot <- PlotEffectsOnVariable(effects, v, min.mean, min.sd)
         if (! is.null(plot)) {
             plots[[v]] <- plot
         }
     }
-    
+
     return(plots)
 }
 
@@ -253,4 +253,145 @@ PlotEffectsExample <- function() {
     }
 
     return(smallppn.ee)
+}
+
+#
+# Compares the elementary effects on a single variable for multiple sets of
+# elementary effects.
+#
+# Args:
+#   effects:  a list of sets of elementary effects.
+#   var.list: a list of variables to inspect, where each variable has a name
+#             (name), and a minimum (absolute) mean (min.mean) and deviation
+#             (min.sd) that define which effects are significant.
+#   stagger:  whether to stagger the parameter names on the y-axis.
+#
+# Returns:
+#   The plot object.
+#
+CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
+
+    all.xs <- character()
+    all.ys <- double()
+    all.ymins <- double()
+    all.ymaxs <- double()
+    all.sets <- character()
+    all.vars <- character()
+
+    short.name <- function(s) { return(substring(s, 3)) }
+
+    for (var in var.list) {
+    var.name <- var$name
+    min.mean <- var$min.mean
+    min.sd <- var$min.sd
+    if (is.null(min.mean)) {
+        min.mean <- NA
+    }
+    if (is.null(min.sd)) {
+        min.sd <- NA
+    }
+
+    i <- 1
+    for (effects in effect.list) {
+        effects.on.v <- EffectsOnVariable(effects, var.name)
+
+        # Sort from largest absolute mean to smallest absolute mean.
+        ys <- as.double(effects.on.v$mean)
+        ixs <- sort(abs(ys), index.return=TRUE, decreasing=TRUE)$ix
+        ys <- ys[ixs]
+
+        xs <- as.character(map(short.name, names(effects.on.v$mean)[ixs]))
+        sds <- as.double(effects.on.v$sd[ixs])
+        ymins <- ys - sds
+        ymaxs <- ys + sds
+
+        # Only plot parameters whose elementary effects exceed the minimums.
+        if (! is.na(min.mean) && ! is.na(min.sd)) {
+            # Elementary effects need only exceed one of the two minimums.
+            ixs <- which(abs(ys) > min.mean | abs(sds) > min.sd)
+        } else if (! is.na(min.mean)) {
+            ixs <- which(abs(ys) > min.mean)
+        } else if (! is.na(min.sd)) {
+            ixs <- which(abs(sds) > min.sd)
+        } else if (length(ys) > 0) {
+            ixs <- 1:length(ys)
+        } else {
+            len.msg <- paste("WARNING: no VALID values for", var.name)
+            return(NULL)
+        }
+
+        # Remove infinite and non-numeric values.
+        old.length <- length(ixs)
+        invalid.means <- which(is.na(ys[ixs]) | is.infinite(ys[ixs]))
+        if (length(invalid.means) > 0) {
+            ixs <- ixs[- invalid.means]
+        }
+        invalid.sds <- which(is.na(ys[ixs]) | is.infinite(ys[ixs]))
+        if (length(invalid.sds) > 0) {
+            ixs <- ixs[- invalid.sds]
+        }
+        new.length <- length(ixs)
+
+        if (new.length == 0) {
+            len.msg <- paste("WARNING: removed ALL values for", var.name)
+            print(len.msg, quote=FALSE)
+            return(NULL)
+        } else if (new.length != old.length) {
+            len.msg <- paste("WARNING: removed", old.length - new.length,
+                             "values out of", old.length, "for", var.name)
+            print(len.msg, quote=FALSE)
+        }
+
+        if (stagger) {
+            x.lbls <- StaggerLabels(xs[ixs], levels=2, do.sort=FALSE,
+                                    reqd="", add="                ")
+        } else {
+            x.lbls <- xs[ixs]
+        }
+
+        if (! is.null(effects$label)) {
+            set.name <- effects$label
+        } else {
+            set.name <- sprintf("Set %d", i)
+        }
+
+        all.xs <- c(all.xs, x.lbls)
+        all.ys <- c(all.ys, ys[ixs])
+        all.ymins <- c(all.ymins, ymins[ixs])
+        all.ymaxs <- c(all.ymaxs, ymaxs[ixs])
+        all.sets <- c(all.sets, rep(set.name, length(x.lbls)))
+        all.vars <- c(all.vars, rep(substring(var.name, 3), length(x.lbls)))
+
+        i <- i + 1
+    }
+
+    }
+
+    # Label the main axis "Elementary Effects (mu +/- sigma)".
+    axis.title <- eval(substitute(expression(
+        paste("Elementary Effects (", mu %+-% sigma, ")")),
+        list(v=substring(var.name, 3)
+        )))
+
+    lines.position <- position_dodge(width=0.85, height=0)
+
+    plot.frame <- data.frame(
+        xs = factor(all.xs, levels=rev(unique(all.xs))),
+        ys = all.ys,
+        ymin = all.ymins,
+        ymax = all.ymaxs,
+        sets = factor(all.sets, levels=unique(all.sets)),
+        vars = factor(all.vars, levels=unique(all.vars))
+        )
+
+    p <- ggplot(data=plot.frame, aes(x=xs, y=ys, ymin=ymin, ymax=ymax,
+                colour=sets, shape=sets)) +
+         geom_pointrange(position=lines.position, size=0.65) +
+         scale_colour_hue("Time") +
+         scale_shape("Time") +
+         scale_x_discrete("Parameter") +
+         scale_y_continuous(axis.title) +
+         coord_flip() + facet_wrap(~ vars, nrow=1, scales="free")
+
+    return(p)
 }
