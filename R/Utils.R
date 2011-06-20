@@ -133,6 +133,75 @@ GetField <- function(name) {
 # Plotting
 ##############################################################################
 
+ListToFrame <- function(value.list, tag=NULL, facet=NULL) {
+    ns <- character()
+    vs <- double()
+    for (n in names(value.list)) {
+        ns <- c(ns, n)
+        vs <- c(vs, value.list[[n]])
+    }
+
+    value.frame <- data.frame(name=ns, value=vs, stringsAsFactors=FALSE)
+    if (! is.null(tag)) {
+        value.frame$tag <- rep(tag, length(ns))
+    }
+    if (! is.null(facet)) {
+        value.frame$facet <- rep(facet, length(ns))
+    }
+    
+    return(value.frame)
+}
+
+ConcatenateFrames <- function(frame.list) {
+    ns <- character()
+    vs <- double()
+    ts <- character()
+    fs <- character()
+    
+    for (f in frame.list) {
+        ns <- c(ns, f[["name"]])
+        vs <- c(vs, f[["value"]])
+        ts <- c(ts, f[["tag"]])
+        fs <- c(fs, f[["facet"]])
+    }
+
+    frame <- data.frame(name=ns, value=vs, tag=ts, stringsAsFactors=FALSE)
+    
+    if (length(ns) == length(fs)) {
+        frame$facet <- fs
+    }
+
+    return(frame)
+}
+
+PlotFrameOfTaggedValues <- function(frame, xlbl, ylbl, tlbl, desc=FALSE,
+                                    min.val=NA) {
+    ixs <- order(frame$facet, abs(frame$value))
+    if (! is.na(min.val)) {
+        ixs <- ixs[abs(frame$value)[ixs] > min.val]
+    }
+    xs <- frame$name[ixs]
+    xs <- factor(xs, levels=unique(xs))
+    ys <- frame$value[ixs]
+    ts <- frame$tag[ixs]
+    fs <- frame$facet[ixs]
+    fs <- factor(fs, levels=sort(unique(fs)))
+    
+    plot.frame <- data.frame(xs=xs, ys=ys, tags=ts, facets=fs)
+    
+    p <- ggplot(plot.frame, aes(x=xs, y=ys, colour=tags, shape=tags)) +
+         geom_point() +
+         scale_colour_hue(tlbl) + scale_shape(tlbl) +
+         xlab(xlbl) + ylab(ylbl) +
+         coord_flip()
+
+    if (length(unique(frame$facet)) > 1) {
+        p <- p + facet_wrap(~ facets, nrow=1, scales="free", drop=FALSE)
+    }
+
+    return(p)
+}
+
 #
 # Plots a list of numerical values.
 #
