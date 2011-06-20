@@ -67,6 +67,81 @@ MostCorrelated <- function(data, value, method="spearman", count=10,
 }
 
 #
+#
+#
+SignificantCorrelations <- function (popn, value, examine=c("par","var"),
+    only.exps=c("pre", "post", "both")) {
+  cols <- names(popn)
+  val.col <- which(cols == value)
+
+  examine <- match.arg(examine)
+  if (examine == "par") {
+    input.cols <- grep("p_", cols)
+  } else if (examine == "var") {
+    input.cols <- grep("v_", cols)
+  } else {
+    stop(sprintf("Invalid argument for SignificantCorrelations: examine"))
+  }
+  input.cols <- input.cols[! input.cols == val.col]
+
+  row.count <- dim(popn)[1]
+  only.exps <- match.arg(only.exps)
+  if (only.exps == "pre") {
+    row.range <- seq(from=1, to=row.count, by=2)
+  } else if (only.exps == "post") {
+    row.range <- seq(from=2, to=row.count, by=2)
+  } else if (only.exps == "both") {
+    row.range <- 1:row.count
+  } else {
+    stop(sprintf("Invalid argument for SignificantCorrelations: only.exps"))
+  }
+
+  popn.val <- popn[row.range, val.col]
+
+  if (length(unique(popn.val)) == 1) {
+    warning(sprintf("Constant correlation variable: %s", value))
+    return(list())
+  }
+
+  sign.corrs <- list()
+  # suppress warnings
+  op <- options(warn = (-1))
+  for (ix in input.cols) {
+    popn.cmp <- popn[row.range, ix]
+    c <- cor.test(popn.val, popn.cmp, method="spearman")
+    if (! is.na(c$p.value) && c$p.value <= 0.05) {
+      cmp.name <- substring(cols[ix], 3)
+      sign.corrs[[cmp.name]] <- c$estimate[["rho"]]
+    }
+  }
+  # reset the warnings
+  options(op)
+
+  return(sign.corrs)
+}
+
+SignCorrsForExps <- function(popn, only.exps, examine=c("par","var")) {
+	var.names <- grep("v_", names(popn), value=TRUE)
+	corr.list <- list()
+	for (v in var.names) {
+	    print(v)
+	    var.corrs <- SignificantCorrelations(popn, v, examine=examine,
+	                                         only.exps=only.exps)
+	    corr.list[[v]] <- var.corrs
+	}
+
+	return(corr.list)
+}
+
+SignCorrsAfterDelta <- function(popn, examine=c("par","var")) {
+    return(SignCorrsForExps(popn, "post", examine))
+}
+
+SignCorrsBeforeDelta <- function(popn, examine=c("par","var")) {
+    return(SignCorrsForExps(popn, "pre", examine))
+}
+
+#
 # A partial-correlation function that is an alternative to pcor.test().
 #
 pcor2 <- function(x1, x2) {
