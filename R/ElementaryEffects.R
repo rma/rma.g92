@@ -31,6 +31,12 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
         exps.diff <- exps.post - exps.pre
 
         delta.exps <- which(exps.diff != 0)
+        if (length(delta.exps) == 0) {
+            warn.msg <- paste("No perturbations for parameter", p)
+            print(warn.msg, quote=FALSE)
+            next
+        }
+
         if (log) {
             log.msg <- paste(p, ":", length(delta.exps), "experiments")
             print(log.msg, quote=FALSE)
