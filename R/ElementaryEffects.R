@@ -104,12 +104,12 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
 #
 EffectsOnVariable <- function(effects, var.name) {
     effects.on.v <- list(mean=list(), sd=list())
-    
-    for (p in names(effects)) {
+
+    for (p in grep("p_", names(effects), value=TRUE)) {
         effects.on.v$mean[[p]] <- effects[[p]]$mean[[var.name]]
         effects.on.v$sd[[p]] <- effects[[p]]$sd[[var.name]]
     }
-    
+
     return(effects.on.v)
 }
 
