@@ -23,6 +23,24 @@ ask <- function(msg = "Press <RETURN> to continue: ") {
 }
 
 ##############################################################################
+# Importing Data
+##############################################################################
+
+#
+# Imports data from a CSV file and saves the table to an external file.
+#
+# Args:
+#   var_name:    The name of the variable to hold the imported table.
+#   input_file:  The CSV file from which to import the table.
+#   output_file: The RData file to save the imported table to.
+#
+ImportCSV <- function(var_name, input_file, output_file) {
+    assign(var_name, read.table(input_file, header=TRUE, sep=',',
+                                colClasses=c('numeric'), comment.char=''));
+    save(list=c(var_name), file=output_file, compress='bzip2');
+}
+
+##############################################################################
 # Workspace management
 ##############################################################################
 
@@ -148,7 +166,7 @@ ListToFrame <- function(value.list, tag=NULL, facet=NULL) {
     if (! is.null(facet)) {
         value.frame$facet <- rep(facet, length(ns))
     }
-    
+
     return(value.frame)
 }
 
@@ -157,7 +175,7 @@ ConcatenateFrames <- function(frame.list) {
     vs <- double()
     ts <- character()
     fs <- character()
-    
+
     for (f in frame.list) {
         ns <- c(ns, f[["name"]])
         vs <- c(vs, f[["value"]])
@@ -166,7 +184,7 @@ ConcatenateFrames <- function(frame.list) {
     }
 
     frame <- data.frame(name=ns, value=vs, tag=ts, stringsAsFactors=FALSE)
-    
+
     if (length(ns) == length(fs)) {
         frame$facet <- fs
     }
@@ -186,9 +204,9 @@ PlotFrameOfTaggedValues <- function(frame, xlbl, ylbl, tlbl, desc=FALSE,
     ts <- frame$tag[ixs]
     fs <- frame$facet[ixs]
     fs <- factor(fs, levels=sort(unique(fs)))
-    
+
     plot.frame <- data.frame(xs=xs, ys=ys, tags=ts, facets=fs)
-    
+
     p <- ggplot(plot.frame, aes(x=xs, y=ys, colour=tags, shape=tags)) +
          geom_point() +
          scale_colour_hue(tlbl) + scale_shape(tlbl) +
