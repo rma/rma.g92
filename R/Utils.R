@@ -156,7 +156,7 @@ PlotListOfValues <- function(vals, xlbl, ylbl, squash=TRUE, desc=TRUE) {
          opts(axis.text.x=theme_text(colour = NA))
   } else {
     ys <- as.double(vals)
-    ixs <- sort(ys, index.return=TRUE, decreasing=desc)$ix
+    ixs <- sort(abs(ys), index.return=TRUE, decreasing=desc)$ix
     ys <- ys[ixs]
     xs <- names(vals)[ixs]
     p <- qplot(x=factor(xs, levels=xs), y=ys) + xlab(xlbl) + ylab(ylbl)
