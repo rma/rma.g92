@@ -23,6 +23,7 @@ export(
   GetDescription,
   GetField,
   ListToFrame,
+  ImportCSV,
   MakeDistributionTables,
   MakeFormula,
   MakeGLM,
