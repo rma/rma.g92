@@ -147,7 +147,7 @@ def get_block_dict(blocks, min_indent=0, ret_list=False):
     else:
         block_dict = {}
         block_dict['.sorted_keys'] = []
-        
+
     if len(blocks) == 0:
         if ret_list:
             return (block_dict, blocks)
@@ -210,7 +210,11 @@ def write_Rd(fn_file, fn_name, fn_usage, blocks):
         f.write('\\name{%s}\n' % (fn_name,))
         f.write('\\alias{%s}\n' % (fn_name,))
         if blocks.has_key(''):
-            f.write('\\title{%s}\n' % (first_sentence(blocks[''][0]),))
+            title = first_sentence(blocks[''][0])
+            if title == '':
+                f.write('\\title{%s}\n' % (fn_name,))
+            else:
+                f.write('\\title{%s}\n' % (title,))
         else:
             f.write('\\title{%s}\n' % (fn_name,))
         f.write('\\usage{\n')
@@ -250,7 +254,7 @@ def get_usage(lines, ix, start_from, fn_name):
         this_line = lines[ix].strip()
         curr_pos = 0
         usage_str += "\n"
-        
+
     return fn_name + usage_str
 
 def create_doc(src_file, out_dir):
@@ -264,8 +268,12 @@ def create_doc(src_file, out_dir):
                 fn_usage = get_usage(lines, ix, m.end(), fn_name)
                 fn_file = os.path.join(out_dir, fn_name + ".Rd")
                 blocks = parse_blocks(lines, ix - 1)
-                blocks = get_block_dict(blocks)
-                write_Rd(fn_file, fn_name, fn_usage, blocks)
+                if len(blocks) == 0 or len(blocks[0]) == 0:
+                    print("WARNING: no documentation for %s() in %s"
+                          % (fn_name, os.path.basename(src_file)))
+                else:
+                    blocks = get_block_dict(blocks)
+                    write_Rd(fn_file, fn_name, fn_usage, blocks)
 
 def create_docs(src_dir, out_dir):
     out_dir = os.path.abspath(out_dir)
