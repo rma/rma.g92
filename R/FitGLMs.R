@@ -28,18 +28,19 @@ MakeFormula <- function(data, output) {
 #   formula: The formula for the linear model.
 #   step:    Select a reduced model by AIC (default is FALSE).
 #   family:  The error distribution and link function (default is gaussian).
+#   trace:   Whether to log the step-reducing process (default is 0).
 #
 # Returns:
 #   A list containing the fitted linear model (glm.all.Xs), and the reduced
 #   model (glm.step.Xs) if step is TRUE. Both models inherit from the "glm"
 #   class; see the documentation for "glm" for further details.
 #
-MakeGLM <- function(data, formula, step=FALSE, family=gaussian()) {
+MakeGLM <- function(data, formula, step=FALSE, family=gaussian(), trace=0) {
   glm.all.Xs <- glm(formula, family=family, data)
   result = list(glm.all.Xs = glm.all.Xs)
 
   if (step) {
-    glm.step.Xs <- step(glm.all.Xs, trace = 0)
+    glm.step.Xs <- step(glm.all.Xs, trace = trace)
     result$glm.step.Xs <- glm.step.Xs
   }
 
