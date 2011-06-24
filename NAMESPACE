@@ -4,7 +4,7 @@ import(ggplot2, Hmisc, stats)
 # To generate the list of exported functions, run list_exports.sh.
 #
 export(
-  .ls.objects,
+  ask,
   CalculateValueDistributions,
   CompareEffects,
   CompareGLMContributions,
@@ -19,16 +19,19 @@ export(
   ExamplePartialCorrPlots,
   FitGLMsToOutputs,
   FitGLMsToPopulations,
-  GLMPerformance,
   GetDescription,
   GetField,
-  ListToFrame,
+  GLMPerformance,
   ImportCSV,
+  ListToFrame,
+  .ls.objects,
+  lsos,
   MakeDistributionTables,
   MakeFormula,
   MakeGLM,
   MakeHeatmapFrame,
   MakeThreshold,
+  map,
   MissingParams,
   MostCorrelated,
   MostSensitiveParameters,
@@ -65,8 +68,5 @@ export(
   SignificantCorrelations,
   StaggerLabels,
   StepReduceSavedGLMs,
-  WithCairo,
-  ask,
-  lsos,
-  map
+  WithCairo
 )
