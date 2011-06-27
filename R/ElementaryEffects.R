@@ -267,7 +267,7 @@ PlotEffectsExample <- function() {
 }
 
 #
-# Compares the elementary effects on a single variable for multiple sets of
+# Compares the elementary effects on multiple variables for multiple sets of
 # elementary effects.
 #
 # Args:
@@ -276,11 +276,13 @@ PlotEffectsExample <- function() {
 #             (name), and a minimum (absolute) mean (min.mean) and deviation
 #             (min.sd) that define which effects are significant.
 #   stagger:  whether to stagger the parameter names on the y-axis.
+#   top.N:    the number of elementary effects to show for each variable
+#             (default is NA, show all elementary effects).
 #
 # Returns:
 #   The plot object.
 #
-CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
+CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA) {
 
     all.xs <- character()
     all.ys <- double()
@@ -302,34 +304,53 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
         min.sd <- NA
     }
 
+    param.names <- grep("p_", names(effect.list[[1]]), value=TRUE)
+
+    # Calculate the maximum mean and deviation for each parameter, over the
+    # sets of elementary effects. Also calculate the maximum of the mean and
+    # deviation.
+    max.means <- rep.int(0, length(param.names))
+    max.sds <- rep.int(0, length(param.names))
+    max.either <- rep.int(0, length(param.names))
+    for (some.effects in effect.list) {
+        for (i in grep("p_", param.names, value=FALSE)) {
+            p <- param.names[i]
+            max.means[i] <- max(abs(some.effects[[p]]$mean[[var.name]]),
+                                max.means[i], na.rm=FALSE)
+            max.sds[i] <- max(abs(some.effects[[p]]$sd[[var.name]]),
+                              max.sds[i], na.rm=FALSE)
+            max.either[i] <- max(max.means[i], max.sds[i], na.rm=FALSE)
+        }
+    }
+
+    # Weed out the elementary effects that do not meet the minimum values.
+    if (! is.na(min.mean) && ! is.na(min.sd)) {
+        # Elementary effects need only exceed one of the two minimums.
+        only.ixs <- which(max.means > min.mean | max.sds > min.sd)
+    } else if (! is.na(min.mean)) {
+        only.ixs <- which(max.means > min.mean)
+    } else if (! is.na(min.sd)) {
+        only.ixs <- which(max.sds > min.sd)
+    } else {
+        only.ixs <- 1:length(param.names)
+    }
+
     i <- 1
     for (effects in effect.list) {
+        # Retrieve all elementary effects on this variable.
         effects.on.v <- EffectsOnVariable(effects, var.name)
+        ixs <- only.ixs
 
-        # Sort from largest absolute mean to smallest absolute mean.
+        # Retain only the pertinent elementary effects.
+        effects.on.v$mean <- as.double(effects.on.v$mean[ixs])
+        effects.on.v$sd <- as.double(effects.on.v$sd[ixs])
+
+        # Calculate the mean +/- deviation values.
+        xs <- as.character(map(short.name, param.names[ixs]))
         ys <- as.double(effects.on.v$mean)
-        ixs <- sort(abs(ys), index.return=TRUE, decreasing=TRUE)$ix
-        ys <- ys[ixs]
-
-        xs <- as.character(map(short.name, names(effects.on.v$mean)[ixs]))
-        sds <- as.double(effects.on.v$sd[ixs])
+        sds <- as.double(effects.on.v$sd)
         ymins <- ys - sds
         ymaxs <- ys + sds
-
-        # Only plot parameters whose elementary effects exceed the minimums.
-        if (! is.na(min.mean) && ! is.na(min.sd)) {
-            # Elementary effects need only exceed one of the two minimums.
-            ixs <- which(abs(ys) > min.mean | abs(sds) > min.sd)
-        } else if (! is.na(min.mean)) {
-            ixs <- which(abs(ys) > min.mean)
-        } else if (! is.na(min.sd)) {
-            ixs <- which(abs(sds) > min.sd)
-        } else if (length(ys) > 0) {
-            ixs <- 1:length(ys)
-        } else {
-            len.msg <- paste("WARNING: no VALID values for", var.name)
-            return(NULL)
-        }
 
         # Remove infinite and non-numeric values.
         old.length <- length(ixs)
@@ -343,6 +364,7 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
         }
         new.length <- length(ixs)
 
+        # Report if any or all values were removed.
         if (new.length == 0) {
             len.msg <- paste("WARNING: removed ALL values for", var.name)
             print(len.msg, quote=FALSE)
@@ -353,6 +375,15 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
             print(len.msg, quote=FALSE)
         }
 
+        # Retain only the top values, when requested.
+        if (! is.na(top.N)) {
+            sorted.ixs <- sort(max.either[ixs], index.return=TRUE,
+                               decreasing=TRUE)$ix
+            sorted.ixs <- sort(sorted.ixs[1:top.N])
+            ixs <- ixs[sorted.ixs]
+        }
+
+        # Stagger the parameter labels along the axis, when requested.
         if (stagger) {
             x.lbls <- StaggerLabels(xs[ixs], levels=2, do.sort=FALSE,
                                     reqd="", add="                ")
@@ -360,12 +391,14 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE) {
             x.lbls <- xs[ixs]
         }
 
+        # Label each set of elementary effects.
         if (! is.null(effects$label)) {
             set.name <- effects$label
         } else {
             set.name <- sprintf("Set %d", i)
         }
 
+        # Add the elementary effects for this variable to the plot frame.
         all.xs <- c(all.xs, x.lbls)
         all.ys <- c(all.ys, ys[ixs])
         all.ymins <- c(all.ymins, ymins[ixs])
