@@ -5,6 +5,7 @@
 #   experiments: the data frame of delta-perturbation experiments.
 #   outliers.rm: whether to remove outliers before calculating statistics.
 #   stats.only:  whether to only return the means and deviations.
+#   norm:        whether to normalise effects to percentage changes.
 #   log:         whether to print diagnostic output.
 #
 # Returns:
@@ -12,7 +13,7 @@
 #   standard deviation of effects (sd) for each parameter in the data frame.
 #
 ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
-                              log=FALSE) {
+                              norm=TRUE, log=FALSE) {
     exp.count <- dim(experiments)[1]
     names.all <- names(experiments)
     names.par <- grep("p_", names.all, value=TRUE)
@@ -50,9 +51,13 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
         vars.post[vars.pre == 0] <- NA
         vars.pre[vars.pre == 0] <- NA
 
-        vars.diff <- (vars.post - vars.pre) / vars.pre
-        norm.by <- exps.pre[delta.exps] / exps.diff[delta.exps]
-        p.effects <- vars.diff * norm.by
+        if (norm) {
+            # Normalise the elementary effects.
+            p.effects <- (vars.post - vars.pre) / vars.pre
+        } else {
+            # The formulation given by Morris in Technometrics 33(2):161--174.
+            p.effects <- (vars.post - vars.pre) / exps.diff[delta.exps]
+        }
 
         if (outliers.rm) {
             # Remove outliers, based on the "median/MAD method" presented in
