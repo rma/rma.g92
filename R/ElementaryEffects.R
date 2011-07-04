@@ -54,6 +54,8 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
         if (norm) {
             # Normalise the elementary effects.
             p.effects <- (vars.post - vars.pre) / vars.pre
+            # Take into account the sign of the perturbations.
+            p.effects <- p.effects * sign(exps.diff[delta.exps])
         } else {
             # The formulation given by Morris in Technometrics 33(2):161--174.
             p.effects <- (vars.post - vars.pre) / exps.diff[delta.exps]
