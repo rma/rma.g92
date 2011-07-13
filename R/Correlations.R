@@ -75,10 +75,13 @@ SignificantCorrelations <- function (popn, value, examine=c("par","var"),
   val.col <- which(cols == value)
 
   examine <- match.arg(examine)
+
   if (examine == "par") {
     input.cols <- grep("p_", cols)
   } else if (examine == "var") {
     input.cols <- grep("v_", cols)
+    skip.logical <- grep("v_IS", cols, invert=TRUE)
+    input.cols <- intersect(input.cols, skip.logical)
   } else {
     stop(sprintf("Invalid argument for SignificantCorrelations: examine"))
   }
