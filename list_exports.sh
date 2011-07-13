@@ -10,7 +10,7 @@ EOF
 
 echo 'export('
 
-egrep '^[\.a-zA-Z]+ <- function' R/*.R |
+egrep '^[\.a-zA-Z0-9]+ <- function' R/*.R |
      awk '{ print $1; }' |
      awk 'BEGIN { FS=":"; OFS=""; } { print "  ", $2; }' |
      grep -v 'pcor.' |
