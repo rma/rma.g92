@@ -44,6 +44,7 @@ export(
   PlotCrossCorrelation,
   PlotCrossCorrelations,
   PlotDistsComparison,
+  PlotDistsComparison2,
   PlotDistsComparisonDemo,
   PlotEffectsExample,
   PlotEffectsOnAllVariables,

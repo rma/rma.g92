@@ -87,6 +87,113 @@ CalculateValueDistributions <- function(data, prefix) {
 }
 
 #
+# Plots value distributions, comparing the distributions in a population
+# to a control population against which the distributions are normalised.
+#
+# Args:
+#   control:        The control population.
+#   d1:             The first population.
+#   l1:             A descriptive name for the first population.
+#   d2:             The second population.
+#   l2:             A descriptive name for the second population.
+#   sd.wrt.sd:      Whether standard deviations are normalised with respect to
+#                   the deviations in the control population (default) or the
+#                   means in the control population.
+#   stagger.labels: Whether the x-axis labels should be rotated and staggered.
+#   plot.title:     The title of the plot.
+#   min.diff:       The minimum difference in (normalised) mean for a value to
+#                   be included in the plot.
+#   max.diff:       The maximum difference in (normalised) mean for a value to
+#                   be included in the plot.
+#   y.lim:          The range of the y-axis.
+#
+# Returns:
+#   A list containing the plot object (plot), the names of the plotted values
+#   (names) and the names of the values that exceeded max.diff (too.large).
+#
+PlotDistsComparison <- function(control, d1, l1, sd.wrt.sd=TRUE,
+    stagger.labels=FALSE, plot.title=NULL, min.diff=0.10, max.diff=10.0,
+    y.lim=NULL) {
+
+  # Extract the means and deviations for each population.
+  control.means <- as.double(map(GetField("mean"), control))
+  control.sds <- as.double(map(GetField("sd"), control))
+  d1.means <- as.double(map(GetField("mean"), d1))
+  d1.sds <- as.double(map(GetField("sd"), d1))
+
+  # Normalise the means and deviations.
+  d1.means <- d1.means / control.means
+  if (sd.wrt.sd) {
+      d1.sds <- d1.sds / control.sds
+  } else {
+      d1.sds <- d1.sds / control.means
+  }
+
+  # Remove NaNs from the means and deviations.
+  remove.inds <- which(is.nan(d1.means), arr.ind=TRUE)
+  remove.inds <- c(remove.inds, which(is.nan(d1.sds), arr.ind=TRUE))
+  # Remove means that are too large or too similar to the control.
+  remove.inds <- c(remove.inds, which(abs(d1.means) > max.diff, arr.ind=TRUE))
+  remove.inds <- c(remove.inds, which(abs(d1.means) > (1 - min.diff) & abs(d1.means) < (1 + min.diff), arr.ind=TRUE))
+  remove.inds <- unique(remove.inds)
+  # Record which variables/parameters were too large.
+  large.inds <- c(which(abs(d1.means) > max.diff, arr.ind=TRUE))
+  names.large <- names(control)[unique(large.inds)]
+
+  # Actually remove the invalid values from the data.
+  d1.means <- d1.means[-remove.inds]
+  d1.sds <- d1.sds[-remove.inds]
+  names.kept <- names(control)[-remove.inds]
+
+  # Build the lists of all means and deviations.
+  means = d1.means
+  sds = d1.sds
+
+  # Generate the labels for the x-axis.
+  names.disp <- as.character(map(function(s) { return(substring(s, 3)) }, names.kept))
+  if (stagger.labels) {
+    names.disp <- StaggerLabels(names.disp)
+  }
+  print(names.disp)
+  xs <- names.disp
+
+  # Calculate the size of the boxes.
+  ymin = means - sds
+  ymax = means + sds
+
+  # Categorise the distributions by population.
+  name.count <- length(names.kept)
+  popn.labels <- rep(l1, name.count)
+
+  # Collect all of the data into a single frame.
+  info <- data.frame(
+    Population = popn.labels,
+    label = format(sds, digits=3),
+    Xs = xs,
+    Value = means,
+    ymin = ymin,
+    ymax = ymax
+  )
+
+  print(format(sds, digits=3))
+
+  # Produce a plot object that encapsulates the data to be plotted.
+  p <- ggplot(data=info, aes(x=Xs, y=Value, label=label, ymin=ymin, ymax=ymax, colour=Population)) +
+       geom_text(hjust=-0.25, vjust=-0.25) + geom_point(size=5)
+  # Optionally set the plot title.
+  if (! is.null(plot.title)) {
+    p <- p + opts(title = plot.title)
+  }
+  # Optionally set the limits on the Y-axis.
+  if (! is.null(y.lim)) {
+    p <- p + ylim(y.lim)
+  }
+
+  # Return the produced plot object.
+  return(list(plot=p, names=names.kept, too.large=names.large))
+}
+
+#
 # Plots value distributions, comparing the distributions in two distinct
 # populations to a control population against which the distributions are
 # normalised.
@@ -112,7 +219,7 @@ CalculateValueDistributions <- function(data, prefix) {
 #   A list containing the plot object (plot), the names of the plotted values
 #   (names) and the names of the values that exceeded max.diff (too.large).
 #
-PlotDistsComparison <- function(control, d1, l1, d2, l2, sd.wrt.sd=TRUE,
+PlotDistsComparison2 <- function(control, d1, l1, d2, l2, sd.wrt.sd=TRUE,
     stagger.labels=FALSE, plot.title=NULL, min.diff=0.10, max.diff=10.0,
     y.lim=NULL) {
 
@@ -205,7 +312,7 @@ PlotDistsComparison <- function(control, d1, l1, d2, l2, sd.wrt.sd=TRUE,
 }
 
 #
-# A demonstration of how to use PlotDistsComparison().
+# A demonstration of how to use PlotDistsComparison2().
 #
 # Args:
 #   None.
@@ -214,11 +321,11 @@ PlotDistsComparison <- function(control, d1, l1, d2, l2, sd.wrt.sd=TRUE,
 #   Nothing; two plots are printed to the active device.
 #
 PlotDistsComparisonDemo <- function() {
-  p1 <- PlotDistsComparison(var.dists.nt, var.dists.pht, "Pre-hypertensive",
+  p1 <- PlotDistsComparison2(var.dists.nt, var.dists.pht, "Pre-hypertensive",
           var.dists.ht, "Hypertensive", max.diff=100)$plot
   print(p1)
 
-  p2 <- PlotDistsComparison(var.dists.nt, var.dists.pht, "Pre-hypertensive",
+  p2 <- PlotDistsComparison2(var.dists.nt, var.dists.pht, "Pre-hypertensive",
           var.dists.ht, "Hypertensive", sd.wrt.sd=FALSE,
           min.diff=0.05, max.diff=10, y.lim=c(-5,5))$plot +
         scale_x_discrete("Variable")
