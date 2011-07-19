@@ -23,6 +23,20 @@ ask <- function(msg = "Press <RETURN> to continue: ") {
 }
 
 ##############################################################################
+# Miscellaneous System Functions
+##############################################################################
+
+#
+# Returns the hostname of the computer on which R is running.
+#
+# Returns:
+#   The hostname of the computer.
+#
+Hostname <- function() {
+  return(as.character(Sys.info()["nodename"]))
+}
+
+##############################################################################
 # Importing Data
 ##############################################################################
 
