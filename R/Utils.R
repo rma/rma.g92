@@ -217,7 +217,7 @@ PlotFrameOfTaggedValues <- function(frame, xlbl, ylbl, tlbl, desc=FALSE,
     ys <- frame$value[ixs]
     ts <- frame$tag[ixs]
     fs <- frame$facet[ixs]
-    fs <- factor(fs, levels=sort(unique(fs)))
+    fs <- factor(fs, levels=unique(frame$facet), ordered = TRUE)
 
     plot.frame <- data.frame(xs=xs, ys=ys, tags=ts, facets=fs)
 

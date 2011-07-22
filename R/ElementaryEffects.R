@@ -284,7 +284,10 @@ PlotEffectsExample <- function() {
 # Returns:
 #   The plot object.
 #
-CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA) {
+CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA,
+                           rows=1, cmp.by=c("mean", "sd", "both")) {
+
+    cmp.by <- match.arg(cmp.by)
 
     all.xs <- character()
     all.ys <- double()
@@ -321,7 +324,13 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA) {
                                 max.means[i], na.rm=FALSE)
             max.sds[i] <- max(abs(some.effects[[p]]$sd[[var.name]]),
                               max.sds[i], na.rm=FALSE)
-            max.either[i] <- max(max.means[i], max.sds[i], na.rm=FALSE)
+            if (cmp.by == "mean") {
+                max.either[i] <- max.means[i]
+            } else if (cmp.by == "sd") {
+                max.either[i] <- max.sds[i]
+            } else if (cmp.by == "both") {
+                max.either[i] <- max(max.means[i], max.sds[i], na.rm=FALSE)
+            }
         }
     }
 
@@ -422,22 +431,36 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA) {
     lines.position <- position_dodge(width=0.85, height=0)
 
     plot.frame <- data.frame(
-        xs = factor(all.xs, levels=rev(unique(all.xs))),
+        xs = factor(all.xs,
+                    levels = factor(sort(unique(all.xs), decreasing = TRUE)),
+                    ordered = TRUE),
         ys = all.ys,
         ymin = all.ymins,
         ymax = all.ymaxs,
-        sets = factor(all.sets, levels=unique(all.sets)),
-        vars = factor(all.vars, levels=unique(all.vars))
+        sets = factor(all.sets, levels=rev(unique(all.sets)), ordered = TRUE),
+        vars = factor(all.vars, levels=unique(all.vars), ordered = TRUE)
         )
 
+    if (length(unique(all.sets)) == 1) {
+        pr.size <- 1.5
+    } else {
+        pr.size <- 0.65
+    }
+
+
     p <- ggplot(data=plot.frame, aes(x=xs, y=ys, ymin=ymin, ymax=ymax,
-                colour=sets, shape=sets)) +
-         geom_pointrange(position=lines.position, size=0.65) +
+                colour=sets, shape=sets, order = -as.numeric(sets))) +
+         geom_pointrange(position=lines.position, size=pr.size) +
          scale_colour_hue("Time") +
          scale_shape("Time") +
          scale_x_discrete("Parameter") +
          scale_y_continuous(axis.title) +
-         coord_flip() + facet_wrap(~ vars, nrow=1, scales="free")
+         geom_hline(yintercept = 0, size = 1) +
+         coord_flip() + facet_wrap(~ vars, nrow=rows, scales="free")
+
+    if (length(unique(all.sets)) == 1) {
+        p <- p + opts(legend.position="none")
+    }
 
     return(p)
 }
