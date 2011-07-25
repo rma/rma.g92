@@ -184,7 +184,7 @@ PartialCorrelations <- function(data, controls, output) {
   tmp = list(estimates=c(), pvalues=c(), names=ns, output=output)
   i <- 1
   for (n in ns) {
-    pc <- pcor.test(data[[n]], data[[output]], data[controls], method="s")
+    pc <- pcor.test(data[[n]], data[[output.var]], data[controls], method="s")
     print(sprintf("%d out of %d", i, length(ns)))
     i <- i + 1
     tmp$estimates <- c(tmp$estimates, pc$estimate)
