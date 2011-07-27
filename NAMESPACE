@@ -12,6 +12,7 @@ export(
   CompareGLMs,
   ConcatenateFrames,
   DataFileName,
+  DeltaPopulation,
   DestDirName,
   EffectsOnVariable,
   ElementaryEffects,

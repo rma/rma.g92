@@ -384,3 +384,32 @@ MakeThreshold <- function(threshold) {
   xs[xs >= threshold] <-1
   return(xs)} )
 }
+
+#
+# Returns the subset of a population that consists of perturbation experiments
+# for a specific parameter.
+#
+# Args:
+#   popn:  The population of perturbation experiments.
+#   delta: The perturbation parameter (minus the "p_" prefix).
+#
+# Returns:
+#   The subset of the experiments where the parameter is perturbed.
+#
+DeltaPopulation <- function(popn, delta) {
+  delta.param <- paste("p_", delta, sep="")
+  popn.size <- dim(popn)[1]
+
+  pre.ixs <- seq(from = 1, to = popn.size, by = 2)
+  post.ixs <- seq(from = 2, to = popn.size, by = 2)
+
+  param.diffs <- popn[[delta.param]][pre.ixs] - popn[[delta.param]][post.ixs]
+  delta.ixs <- which(param.diffs != 0)
+
+  delta.exps <- c()
+  for (ix in delta.ixs) {
+    delta.exps <- c(delta.exps, pre.ixs[ix], post.ixs[ix])
+  }
+
+  return(popn[delta.exps,])
+}
