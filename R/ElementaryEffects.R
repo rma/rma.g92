@@ -515,7 +515,7 @@ EffectCorrelations <- function(popn, ee.param, ee.var, method="spearman") {
     for (p in other.params) {
         disp.name <- substring(p, 3)
         result <- cor.test(elem.effects, ee.popn[pre.ixs, p], method = method)
-        corr.frame[[disp.name]] <- c(result$p.value, result$estimate[[1]])
+        corr.frame[[disp.name]] <- c(result$estimate[[1]], result$p.value)
     }
 
     return(corr.frame)
