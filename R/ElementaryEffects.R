@@ -514,8 +514,6 @@ EffectCorrelations <- function(popn, ee.param, ee.var, method="spearman") {
     # Calculate correlations between each parameter and the elementary effects.
     for (p in other.params) {
         disp.name <- substring(p, 3)
-        cat("Calculating correlations for", disp.name, "\n")
-
         result <- cor.test(elem.effects, ee.popn[pre.ixs, p], method = method)
         corr.frame[[disp.name]] <- c(result$p.value, result$estimate[[1]])
     }
