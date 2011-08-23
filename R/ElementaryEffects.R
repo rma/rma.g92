@@ -451,12 +451,12 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA,
 
     p <- ggplot(data=plot.frame, aes(x=xs, y=ys, ymin=ymin, ymax=ymax,
                 colour=sets, shape=sets, order = -as.numeric(sets))) +
+         geom_hline(yintercept = 0, size = 1) +
          geom_pointrange(position=lines.position, size=pr.size) +
          scale_colour_hue("Time") +
          scale_shape("Time") +
          scale_x_discrete("Parameter") +
          scale_y_continuous(axis.title) +
-         geom_hline(yintercept = 0, size = 1) +
          coord_flip() + facet_wrap(~ vars, nrow=rows, scales="free")
 
     if (length(unique(all.sets)) == 1) {
