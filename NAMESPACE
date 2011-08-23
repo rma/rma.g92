@@ -14,6 +14,7 @@ export(
   DataFileName,
   DeltaPopulation,
   DestDirName,
+  EffectCorrelations,
   EffectsOnVariable,
   ElementaryEffects,
   ExampleHeatmapsMDFLW,
