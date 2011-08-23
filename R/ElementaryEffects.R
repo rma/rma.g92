@@ -7,13 +7,14 @@
 #   stats.only:  whether to only return the means and deviations.
 #   norm:        whether to normalise effects to percentage changes.
 #   log:         whether to print diagnostic output.
+#   warn:        whether to print the names of non-perturbed parameters.
 #
 # Returns:
 #   A list of the elementary effects (effects), the mean effects (mean) and
 #   standard deviation of effects (sd) for each parameter in the data frame.
 #
 ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
-                              norm=TRUE, log=FALSE) {
+                              norm=TRUE, log=FALSE, warn=TRUE) {
     exp.count <- dim(experiments)[1]
     names.all <- names(experiments)
     names.par <- grep("p_", names.all, value=TRUE)
@@ -32,7 +33,7 @@ ElementaryEffects <- function(experiments, outliers.rm=TRUE, stats.only=TRUE,
         exps.diff <- exps.post - exps.pre
 
         delta.exps <- which(exps.diff != 0)
-        if (length(delta.exps) == 0) {
+        if (length(delta.exps) == 0 && warn) {
             warn.msg <- paste("No perturbations for parameter", p)
             print(warn.msg, quote=FALSE)
             next
