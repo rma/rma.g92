@@ -406,10 +406,10 @@ DeltaPopulation <- function(popn, delta) {
   param.diffs <- popn[[delta.param]][pre.ixs] - popn[[delta.param]][post.ixs]
   delta.ixs <- which(param.diffs != 0)
 
-  delta.exps <- c()
-  for (ix in delta.ixs) {
-    delta.exps <- c(delta.exps, pre.ixs[ix], post.ixs[ix])
+  if (length(delta.ixs) < 1) {
+    stop(paste("No perturbation experiments for the parameter", delta))
   }
 
+  delta.exps <- sort(c(pre.ixs[delta.ixs], post.ixs[delta.ixs]))
   return(popn[delta.exps,])
 }
