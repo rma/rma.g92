@@ -465,3 +465,58 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA,
 
     return(p)
 }
+
+#
+# Calculates correlations between the elementary effects of a control parameter
+# and the other parameters, for each perturbation of the control parameter.
+#
+# Args:
+#   popn:     the data frame of delta-perturbation experiments.
+#   ee.param: the name of the control (perturbation) parameter.
+#   ee.var:   the name of the elementary effect variable.
+#   method:   which correlation coefficient to compute (see "stats::cor").
+#
+# Returns:
+#   A 2-row data frame, where the first row contains the estimated correlations
+#   for each parameter and the second row contains the estimated p-values.
+#
+EffectCorrelations <- function(popn, ee.param, ee.var, method="spearman") {
+    param.name <- paste("p_", ee.param, sep="")
+    var.name <- paste("v_", ee.var, sep="")
+
+    # Extract the target experiments.
+    ee.popn <- DeltaPopulation(popn, ee.param)
+    row.count <- dim(ee.popn)[1]
+    pre.ixs <- seq(from = 1, to = row.count, by = 2)
+
+    # Remove parameters that are fixed for all of the experiments.
+    param.names <- grep("p_", names(ee.popn), value = TRUE)
+    for (p in param.names) {
+        if (length(unique(ee.popn[[p]])) == 1) {
+            ee.popn[[p]] <- NULL
+        }
+    }
+
+    # Calculate the elementary effects of the target parameter.
+    elem.effects <- ElementaryEffects(ee.popn, outliers.rm = FALSE,
+                                      stats.only = FALSE, warn = FALSE)
+    elem.effects <- elem.effects[[param.name]]$effects[[var.name]]
+
+    # Get the remaining (non-target) parameter names.
+    other.params <- grep("p_", names(ee.popn), value = TRUE)
+    other.params <- other.params[ - grep(param.name, other.params)]
+
+    # Create the data frame to hold the parameter correlations.
+    corr.frame <- data.frame(row.names = c("estimate", "p-value"))
+
+    # Calculate correlations between each parameter and the elementary effects.
+    for (p in other.params) {
+        disp.name <- substring(p, 3)
+        cat("Calculating correlations for", disp.name, "\n")
+
+        result <- cor.test(elem.effects, ee.popn[pre.ixs, p], method = method)
+        corr.frame[[disp.name]] <- c(result$p.value, result$estimate[[1]])
+    }
+
+    return(corr.frame)
+}
