@@ -95,7 +95,11 @@ PlotCrossCorrelations <- function(data1, title1, short1, data2, title2, short2,
 PlotCrossCorrelation <- function(data1, data2, n, cmp.names, titles,
     x.title, y.title, legend.title) {
 
-  name <- substring(n, 3)
+  if (n == "v_PA") {
+    name <- "MAP"
+  } else {
+    name <- substring(n, 3)
+  }
   title <- paste("Cross-correlation with", name)
 
   cor1 <- as.vector(cor(data1[n], data1[cmp.names], method="spearman"))

@@ -418,7 +418,12 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA,
         all.ymins <- c(all.ymins, ymins[ixs])
         all.ymaxs <- c(all.ymaxs, ymaxs[ixs])
         all.sets <- c(all.sets, rep(set.name, length(x.lbls)))
-        all.vars <- c(all.vars, rep(substring(var.name, 3), length(x.lbls)))
+        if (var.name == "v_PA") {
+            var.disp <- "MAP"
+        } else {
+            var.disp <- substring(var.name, 3)
+        }
+        all.vars <- c(all.vars, rep(var.disp, length(x.lbls)))
 
         i <- i + 1
     }
