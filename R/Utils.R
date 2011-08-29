@@ -395,6 +395,7 @@ MakeThreshold <- function(threshold) {
 #
 # Returns:
 #   The subset of the experiments where the parameter is perturbed.
+#   Returns NULL if there are no perturbations for the parameter.
 #
 DeltaPopulation <- function(popn, delta) {
   delta.param <- paste("p_", delta, sep="")
@@ -407,7 +408,7 @@ DeltaPopulation <- function(popn, delta) {
   delta.ixs <- which(param.diffs != 0)
 
   if (length(delta.ixs) < 1) {
-    stop(paste("No perturbation experiments for the parameter", delta))
+    return(NULL)
   }
 
   delta.exps <- sort(c(pre.ixs[delta.ixs], post.ixs[delta.ixs]))

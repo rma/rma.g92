@@ -486,6 +486,7 @@ CompareEffects <- function(effect.list, var.list, stagger=FALSE, top.N=NA,
 # Returns:
 #   A 2-row data frame, where the first row contains the estimated correlations
 #   for each parameter and the second row contains the estimated p-values.
+#   Returns NULL if there are no perturbations for the control parameter.
 #
 EffectCorrelations <- function(popn, ee.param, ee.var, method="spearman") {
     param.name <- paste("p_", ee.param, sep="")
@@ -493,6 +494,9 @@ EffectCorrelations <- function(popn, ee.param, ee.var, method="spearman") {
 
     # Extract the target experiments.
     ee.popn <- DeltaPopulation(popn, ee.param)
+    if (is.null(ee.popn)) {
+        return(NULL)
+    }
     row.count <- dim(ee.popn)[1]
     pre.ixs <- seq(from = 1, to = row.count, by = 2)
 
